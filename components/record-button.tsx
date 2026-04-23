@@ -15,7 +15,8 @@ type Props = {
 export function RecordButton({ label = "触れて、15秒" }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [remaining, setRemaining] = useState<number>(15);
-  const [error, setError] = useState<string | null>(null);
+  const [voiceUnsupported, setVoiceUnsupported] = useState(false);
+  const [text, setText] = useState("");
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const transcriptRef = useRef<string>("");
@@ -65,19 +66,20 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
 
     setPhase("saving");
     const transcript = transcriptRef.current.trim();
-    const color = getTimeColor();
-    addRecord({
-      type: "voice",
-      timeOfDay: color.name,
-      transcript: transcript || undefined,
-    });
+    if (transcript) {
+      const color = getTimeColor();
+      addRecord({
+        type: "voice",
+        timeOfDay: color.name,
+        transcript,
+      });
+    }
     transcriptRef.current = "";
     setRemaining(15);
     window.setTimeout(() => setPhase("idle"), 600);
   }, [cleanupTimers, teardownRecognition]);
 
   const start = useCallback(() => {
-    setError(null);
     transcriptRef.current = "";
     finishedRef.current = false;
 
@@ -86,48 +88,56 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
         ? window.SpeechRecognition ?? window.webkitSpeechRecognition
         : undefined;
 
-    if (Ctor) {
-      const isSafari =
-        typeof navigator !== "undefined" &&
-        /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
-      try {
-        const rec = new Ctor();
-        rec.lang = navigator.language || "ja-JP";
-        rec.continuous = !isSafari;
-        rec.interimResults = !isSafari;
-        rec.maxAlternatives = 1;
-        rec.onresult = (event) => {
-          let finalText = "";
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const result = event.results[i];
-            if (result.isFinal) finalText += result[0]?.transcript ?? "";
-          }
-          if (finalText) {
-            transcriptRef.current = (transcriptRef.current + finalText).trim();
-          }
-        };
-        rec.onerror = (e) => {
-          setError(`err: ${e.error}`);
-          finish();
-        };
-        rec.onend = () => {
-          if (isSafari && !finishedRef.current && recognitionRef.current) {
-            try {
-              rec.start();
-              return;
-            } catch {
-              // restart 失敗時は素直に終了
-            }
-          }
-          finish();
-        };
-        rec.start();
-        recognitionRef.current = rec;
-      } catch {
-        setError("音声認識を開始できません");
-      }
+    if (!Ctor) {
+      setVoiceUnsupported(true);
+      return;
     }
+
+    const isSafari =
+      typeof navigator !== "undefined" &&
+      /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    let started = false;
+    try {
+      const rec = new Ctor();
+      rec.lang = navigator.language || "ja-JP";
+      rec.continuous = !isSafari;
+      rec.interimResults = !isSafari;
+      rec.maxAlternatives = 1;
+      rec.onresult = (event) => {
+        let finalText = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) finalText += result[0]?.transcript ?? "";
+        }
+        if (finalText) {
+          transcriptRef.current = (transcriptRef.current + finalText).trim();
+        }
+      };
+      rec.onerror = () => {
+        setVoiceUnsupported(true);
+        finish();
+      };
+      rec.onend = () => {
+        if (isSafari && !finishedRef.current && recognitionRef.current) {
+          try {
+            rec.start();
+            return;
+          } catch {
+            // restart 失敗時は素直に終了
+          }
+        }
+        finish();
+      };
+      rec.start();
+      recognitionRef.current = rec;
+      started = true;
+    } catch {
+      setVoiceUnsupported(true);
+      return;
+    }
+
+    if (!started) return;
 
     setPhase("recording");
     setRemaining(15);
@@ -147,6 +157,19 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
     else if (phase === "recording") finish();
   };
 
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const t = text.trim();
+    if (!t) return;
+    const color = getTimeColor();
+    addRecord({
+      type: "voice",
+      timeOfDay: color.name,
+      transcript: t,
+    });
+    setText("");
+  };
+
   const isRecording = phase === "recording";
   const isSaving = phase === "saving";
 
@@ -155,12 +178,12 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        disabled={isSaving}
+        disabled={isSaving || voiceUnsupported}
         aria-label={isRecording ? "録音を終える" : "録音を始める"}
-        className="relative w-44 h-44 rounded-full border flex items-center justify-center font-mincho tracking-[0.3em] text-[13px] transition-opacity duration-700 disabled:opacity-50"
+        className="relative w-44 h-44 rounded-full border flex items-center justify-center font-mincho tracking-[0.3em] text-[13px] transition-opacity duration-700 disabled:opacity-30"
         style={{
           borderColor: "currentColor",
-          opacity: isRecording ? 1 : 0.7,
+          opacity: voiceUnsupported ? 0.3 : isRecording ? 1 : 0.7,
         }}
       >
         {isRecording && (
@@ -187,8 +210,28 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
         </span>
       </button>
 
-      {error && (
-        <p className="mt-4 text-[11px] tracking-[0.3em] opacity-50 font-mincho">{error}</p>
+      {voiceUnsupported && (
+        <form
+          onSubmit={handleTextSubmit}
+          className="mt-8 w-72 max-w-[80vw] flex flex-col items-center"
+          style={{ animation: "ato-fade-in 1.2s ease-out both" }}
+        >
+          <input
+            type="text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="…"
+            aria-label="言葉で残す"
+            className="w-full bg-transparent border-b border-current/30 focus:border-current/60 outline-none py-2 text-center font-mincho text-[14px] tracking-wider placeholder:opacity-40"
+          />
+          <button
+            type="submit"
+            disabled={!text.trim()}
+            className="mt-4 font-mincho text-[12px] tracking-[0.4em] opacity-70 hover:opacity-100 transition-opacity duration-700 disabled:opacity-30"
+          >
+            のこす
+          </button>
+        </form>
       )}
     </div>
   );
