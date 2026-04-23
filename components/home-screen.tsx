@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { TimeBackground } from "@/components/time-background";
 import { RecordButton } from "@/components/record-button";
 import { PhotoUpload } from "@/components/photo-upload";
+import { QuestionCard } from "@/components/question-card";
+import { RecordList } from "@/components/record-list";
 import { useTimeColor } from "@/lib/use-time-color";
 import { promptFor } from "@/lib/prompts";
 import { loadRecords } from "@/lib/storage";
@@ -47,19 +49,10 @@ export function HomeScreen() {
         </p>
       </section>
 
-      {/* QuestionCard はここに入る (Step 7) */}
+      <QuestionCard onSaved={refresh} />
 
       <section className="px-6 pb-32 pt-16">
-        {/* RecordList はここに入る (Step 8) */}
-        {records.length === 0 ? (
-          <p className="text-center text-[12px] tracking-[0.35em] opacity-30 font-mincho">
-            まだ、なにもない
-          </p>
-        ) : (
-          <p className="text-center text-[12px] tracking-[0.35em] opacity-30 font-mincho">
-            {records.length} の記録
-          </p>
-        )}
+        <RecordList records={records} />
       </section>
     </main>
   );
