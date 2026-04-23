@@ -14,6 +14,7 @@ import {
   hydrateRecords,
   subscribeRecords,
 } from "@/lib/storage";
+import { migrateLsToIdb } from "@/lib/migrate-ls-to-idb";
 
 export function HomeScreen() {
   const color = useTimeColor();
@@ -24,7 +25,10 @@ export function HomeScreen() {
   );
 
   useEffect(() => {
-    void hydrateRecords();
+    void (async () => {
+      await migrateLsToIdb();
+      await hydrateRecords();
+    })();
   }, []);
 
   return (
