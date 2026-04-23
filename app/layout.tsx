@@ -5,7 +5,7 @@ import "./globals.css";
 const shipporiMincho = Shippori_Mincho({
   variable: "--font-shippori-mincho",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500"],
   display: "swap",
 });
 
