@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { TimeBackground } from "@/components/time-background";
+import { RecordButton } from "@/components/record-button";
 import { useTimeColor } from "@/lib/use-time-color";
 import { promptFor } from "@/lib/prompts";
 import { loadRecords } from "@/lib/storage";
@@ -37,9 +38,8 @@ export function HomeScreen() {
           {color ? promptFor(color.romaji) : ""}
         </p>
 
-        {/* RecordButton はここに入る (Step 5) */}
-        <div className="mt-12 w-44 h-44 rounded-full border opacity-40 flex items-center justify-center font-mincho tracking-[0.3em] text-sm">
-          触れて、15秒
+        <div className="mt-12">
+          <RecordButton onSaved={refresh} />
         </div>
 
         <p className="mt-10 font-garamond italic text-xs tracking-[0.35em] opacity-40">
