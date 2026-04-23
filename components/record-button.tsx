@@ -104,10 +104,8 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
           }
         };
         rec.onerror = (e) => {
-          if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-            setError("マイクが使えません");
-            finish();
-          }
+          setError(`err: ${e.error}`);
+          finish();
         };
         rec.onend = () => {
           // ブラウザが自動で止めた場合も保存に進む
