@@ -80,6 +80,14 @@ export function RecordDetail({ id }: Props) {
 
             {record.type === "voice" && (
               <div>
+                {record.audioBlob && (
+                  <audio
+                    src={record.audioBlob}
+                    controls
+                    preload="metadata"
+                    className="w-full mb-8 opacity-80"
+                  />
+                )}
                 {record.transcript ? (
                   <p className="font-mincho text-[17px] leading-[2.2] tracking-[0.08em] whitespace-pre-wrap">
                     {record.transcript}
