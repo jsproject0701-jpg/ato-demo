@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #1a1d29;
+  --color-night: #16161f;
+  --color-paper: #ebe6db;
+  --color-paper-warm: #f0e6d2;
+  --color-candle: #f4d4a3;
+  --color-candle-deep: #c9904e;
+  --color-rouge: #d4a5a0;
+  --color-rouge-deep: #9b6b7a;
+  --color-indigo: #5e4a6b;
+  --color-mist: #c5bdb0;
+  --color-mist-deep: #7d8ca0;
+
+  --font-mincho: var(--font-shippori-mincho), "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-garamond: var(--font-cormorant), "Cormorant Garamond", serif;
+  --font-klee: var(--font-klee-one), "Klee One", "Hiragino Mincho ProN", cursive;
+}
+
+:root {
+  --bg-from: #ebe6db;
+  --bg-to: #dde0e0;
+  --bg-text: #2a2825;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(180deg, var(--bg-from) 0%, var(--bg-to) 100%);
+  color: var(--bg-text);
+  font-family: var(--font-mincho);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  transition: background 60s linear, color 60s linear;
+}
+
+::selection {
+  background: rgba(155, 107, 122, 0.18);
+}
