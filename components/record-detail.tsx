@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { TimeBackground } from "@/components/time-background";
-import { deleteRecord, getRecord } from "@/lib/storage";
-import type { AtoRecord } from "@/types/record";
+import {
+  deleteRecord,
+  getRecordsServerSnapshot,
+  getRecordsSnapshot,
+  subscribeRecords,
+} from "@/lib/storage";
 
 type Props = {
   id: string;
@@ -21,21 +25,13 @@ const formatStamp = (iso: string): string => {
 };
 
 export function RecordDetail({ id }: Props) {
-  const [record, setRecord] = useState<AtoRecord | null | undefined>(undefined);
+  const records = useSyncExternalStore(
+    subscribeRecords,
+    getRecordsSnapshot,
+    getRecordsServerSnapshot
+  );
+  const record = useMemo(() => records.find((r) => r.id === id) ?? null, [records, id]);
   const [confirming, setConfirming] = useState(false);
-
-  useEffect(() => {
-    const r = getRecord(id);
-    setRecord(r ?? null);
-  }, [id]);
-
-  if (record === undefined) {
-    return (
-      <main className="relative min-h-screen">
-        <TimeBackground />
-      </main>
-    );
-  }
 
   return (
     <main className="relative min-h-screen flex flex-col">

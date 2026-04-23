@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { TimeBackground } from "@/components/time-background";
 import { RecordButton } from "@/components/record-button";
 import { PhotoUpload } from "@/components/photo-upload";
@@ -8,20 +8,19 @@ import { QuestionCard } from "@/components/question-card";
 import { RecordList } from "@/components/record-list";
 import { useTimeColor } from "@/lib/use-time-color";
 import { promptFor } from "@/lib/prompts";
-import { loadRecords } from "@/lib/storage";
-import type { AtoRecord } from "@/types/record";
+import {
+  getRecordsServerSnapshot,
+  getRecordsSnapshot,
+  subscribeRecords,
+} from "@/lib/storage";
 
 export function HomeScreen() {
   const color = useTimeColor();
-  const [records, setRecords] = useState<AtoRecord[]>([]);
-
-  const refresh = useCallback(() => {
-    setRecords(loadRecords());
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  const records = useSyncExternalStore(
+    subscribeRecords,
+    getRecordsSnapshot,
+    getRecordsServerSnapshot
+  );
 
   return (
     <main className="relative min-h-screen flex flex-col">
@@ -29,7 +28,7 @@ export function HomeScreen() {
 
       <header className="px-6 pt-10 flex items-start justify-between">
         <div className="font-garamond italic tracking-[0.4em] text-sm opacity-60">ato</div>
-        <PhotoUpload onSaved={refresh} />
+        <PhotoUpload />
       </header>
 
       <section className="flex-1 flex flex-col items-center justify-center px-6 text-center">
@@ -41,7 +40,7 @@ export function HomeScreen() {
         </p>
 
         <div className="mt-12">
-          <RecordButton onSaved={refresh} />
+          <RecordButton />
         </div>
 
         <p className="mt-10 font-garamond italic text-xs tracking-[0.35em] opacity-40">
@@ -49,7 +48,7 @@ export function HomeScreen() {
         </p>
       </section>
 
-      <QuestionCard onSaved={refresh} />
+      <QuestionCard />
 
       <section className="px-6 pb-32 pt-16">
         <RecordList records={records} />

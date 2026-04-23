@@ -5,11 +5,7 @@ import { pickQuestionForToday } from "@/lib/questions";
 import { addRecord, hasAnsweredToday, markAnsweredToday } from "@/lib/storage";
 import { getTimeColor } from "@/lib/time-color";
 
-type Props = {
-  onSaved?: () => void;
-};
-
-export function QuestionCard({ onSaved }: Props) {
+export function QuestionCard() {
   const [visible, setVisible] = useState(false);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -48,7 +44,6 @@ export function QuestionCard({ onSaved }: Props) {
     markAnsweredToday();
     setAnswer("");
     setDismissed(true);
-    onSaved?.();
   };
 
   const handleSkip = () => {

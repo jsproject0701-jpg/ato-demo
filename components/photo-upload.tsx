@@ -4,11 +4,7 @@ import { useRef, useState } from "react";
 import { addRecord, compressImage } from "@/lib/storage";
 import { getTimeColor } from "@/lib/time-color";
 
-type Props = {
-  onSaved?: () => void;
-};
-
-export function PhotoUpload({ onSaved }: Props) {
+export function PhotoUpload() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +24,6 @@ export function PhotoUpload({ onSaved }: Props) {
         timeOfDay: color.name,
         imageBlob: dataUrl,
       });
-      onSaved?.();
     } catch {
       setError("保存できませんでした");
     } finally {

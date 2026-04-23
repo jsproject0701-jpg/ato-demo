@@ -10,10 +10,9 @@ type Phase = "idle" | "recording" | "saving";
 
 type Props = {
   label?: string;
-  onSaved?: () => void;
 };
 
-export function RecordButton({ label = "触れて、15秒", onSaved }: Props) {
+export function RecordButton({ label = "触れて、15秒" }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [remaining, setRemaining] = useState<number>(15);
   const [error, setError] = useState<string | null>(null);
@@ -23,11 +22,6 @@ export function RecordButton({ label = "触れて、15秒", onSaved }: Props) {
   const stopTimerRef = useRef<number | null>(null);
   const tickTimerRef = useRef<number | null>(null);
   const finishedRef = useRef<boolean>(false);
-  const onSavedRef = useRef(onSaved);
-
-  useEffect(() => {
-    onSavedRef.current = onSaved;
-  }, [onSaved]);
 
   const cleanupTimers = useCallback(() => {
     if (stopTimerRef.current) {
@@ -79,7 +73,6 @@ export function RecordButton({ label = "触れて、15秒", onSaved }: Props) {
     });
     transcriptRef.current = "";
     setRemaining(15);
-    onSavedRef.current?.();
     window.setTimeout(() => setPhase("idle"), 600);
   }, [cleanupTimers, teardownRecognition]);
 

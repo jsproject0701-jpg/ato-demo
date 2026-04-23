@@ -10,22 +10,51 @@ const uuid = (): string => {
   return `r_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 };
 
-export const loadRecords = (): AtoRecord[] => {
-  if (!isBrowser()) return [];
+const EMPTY: AtoRecord[] = [];
+let snapshot: AtoRecord[] = EMPTY;
+let loaded = false;
+const listeners = new Set<() => void>();
+
+const readFromStorage = (): AtoRecord[] => {
+  if (!isBrowser()) return EMPTY;
   try {
     const raw = window.localStorage.getItem(RECORDS_KEY);
-    if (!raw) return [];
+    if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as AtoRecord[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : EMPTY;
   } catch {
-    return [];
+    return EMPTY;
   }
 };
 
-const saveRecords = (records: AtoRecord[]) => {
+const writeToStorage = (records: AtoRecord[]) => {
   if (!isBrowser()) return;
   window.localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
 };
+
+const setSnapshot = (next: AtoRecord[]) => {
+  snapshot = next.length > 0 ? next : EMPTY;
+  listeners.forEach((cb) => cb());
+};
+
+export const subscribeRecords = (cb: () => void): (() => void) => {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+};
+
+export const getRecordsSnapshot = (): AtoRecord[] => {
+  if (!loaded && isBrowser()) {
+    loaded = true;
+    snapshot = readFromStorage();
+  }
+  return snapshot;
+};
+
+export const getRecordsServerSnapshot = (): AtoRecord[] => EMPTY;
+
+export const loadRecords = (): AtoRecord[] => readFromStorage();
 
 export const addRecord = (
   partial: Omit<AtoRecord, "id" | "createdAt"> & { createdAt?: string }
@@ -35,19 +64,20 @@ export const addRecord = (
     id: uuid(),
     createdAt: partial.createdAt ?? new Date().toISOString(),
   };
-  const records = loadRecords();
-  records.unshift(record);
-  saveRecords(records);
+  const next = [record, ...getRecordsSnapshot()];
+  writeToStorage(next);
+  setSnapshot(next);
   return record;
 };
 
 export const getRecord = (id: string): AtoRecord | undefined => {
-  return loadRecords().find((r) => r.id === id);
+  return getRecordsSnapshot().find((r) => r.id === id);
 };
 
 export const deleteRecord = (id: string) => {
-  const records = loadRecords().filter((r) => r.id !== id);
-  saveRecords(records);
+  const next = getRecordsSnapshot().filter((r) => r.id !== id);
+  writeToStorage(next);
+  setSnapshot(next);
 };
 
 const todayKey = (d: Date = new Date()) =>

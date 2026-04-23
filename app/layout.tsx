@@ -27,12 +27,23 @@ const kleeOne = Klee_One({
 export const metadata: Metadata = {
   title: "ato",
   description: "感性のアーカイブ",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ato",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#1a1d29",
 };
 
 export default function RootLayout({

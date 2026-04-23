@@ -1,0 +1,18 @@
+{
+  "name": "ato",
+  "short_name": "ato",
+  "description": "感性のアーカイブ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#16161f",
+  "theme_color": "#1a1d29",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}
