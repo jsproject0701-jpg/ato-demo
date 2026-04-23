@@ -1,26 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getTimeColor, type TimeColor } from "@/lib/time-color";
+import { useEffect } from "react";
+import { useTimeColor } from "@/lib/use-time-color";
 
 export function TimeBackground() {
-  const [color, setColor] = useState<TimeColor | null>(null);
+  const color = useTimeColor();
 
   useEffect(() => {
-    const apply = () => {
-      const c = getTimeColor();
-      setColor(c);
-      const root = document.documentElement;
-      root.style.setProperty("--bg-from", c.from);
-      root.style.setProperty("--bg-to", c.to);
-      root.style.setProperty("--bg-text", c.text);
-      document.body.style.background = `linear-gradient(180deg, ${c.from} 0%, ${c.to} 100%)`;
-      document.body.style.color = c.text;
-    };
-    apply();
-    const id = window.setInterval(apply, 60_000);
-    return () => window.clearInterval(id);
-  }, []);
+    if (!color) return;
+    const root = document.documentElement;
+    root.style.setProperty("--bg-from", color.from);
+    root.style.setProperty("--bg-to", color.to);
+    root.style.setProperty("--bg-text", color.text);
+    document.body.style.background = `linear-gradient(180deg, ${color.from} 0%, ${color.to} 100%)`;
+    document.body.style.color = color.text;
+  }, [color]);
 
   if (!color) return null;
 
