@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TimeBackground } from "@/components/time-background";
 import { RecordButton } from "@/components/record-button";
+import { PhotoUpload } from "@/components/photo-upload";
 import { useTimeColor } from "@/lib/use-time-color";
 import { promptFor } from "@/lib/prompts";
 import { loadRecords } from "@/lib/storage";
@@ -26,8 +27,7 @@ export function HomeScreen() {
 
       <header className="px-6 pt-10 flex items-start justify-between">
         <div className="font-garamond italic tracking-[0.4em] text-sm opacity-60">ato</div>
-        {/* PhotoUpload はここに入る (Step 6) */}
-        <div className="opacity-30 text-xs tracking-widest">写真</div>
+        <PhotoUpload onSaved={refresh} />
       </header>
 
       <section className="flex-1 flex flex-col items-center justify-center px-6 text-center">
