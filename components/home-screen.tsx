@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { TimeBackground } from "@/components/time-background";
 import { RecordButton } from "@/components/record-button";
 import { PhotoUpload } from "@/components/photo-upload";
@@ -11,6 +11,7 @@ import { promptFor } from "@/lib/prompts";
 import {
   getRecordsServerSnapshot,
   getRecordsSnapshot,
+  hydrateRecords,
   subscribeRecords,
 } from "@/lib/storage";
 
@@ -21,6 +22,10 @@ export function HomeScreen() {
     getRecordsSnapshot,
     getRecordsServerSnapshot
   );
+
+  useEffect(() => {
+    void hydrateRecords();
+  }, []);
 
   return (
     <main className="relative min-h-screen flex flex-col">

@@ -17,12 +17,12 @@ export function PhotoUpload() {
     setBusy(true);
     setError(null);
     try {
-      const dataUrl = await compressImage(file);
+      const blob = await compressImage(file);
       const color = getTimeColor();
-      addRecord({
+      await addRecord({
         type: "photo",
         timeOfDay: color.name,
-        imageBlob: dataUrl,
+        imageBlob: blob,
       });
     } catch {
       setError("保存できませんでした");

@@ -9,6 +9,7 @@ import {
   getRecordsSnapshot,
   subscribeRecords,
 } from "@/lib/storage";
+import { useObjectUrl } from "@/lib/use-object-url";
 
 type Props = {
   id: string;
@@ -32,6 +33,8 @@ export function RecordDetail({ id }: Props) {
   );
   const record = useMemo(() => records.find((r) => r.id === id) ?? null, [records, id]);
   const [confirming, setConfirming] = useState(false);
+  const audioUrl = useObjectUrl(record?.audioBlob);
+  const imageUrl = useObjectUrl(record?.imageBlob);
 
   return (
     <main className="relative min-h-screen flex flex-col">
@@ -52,8 +55,9 @@ export function RecordDetail({ id }: Props) {
                 setConfirming(true);
                 return;
               }
-              deleteRecord(record.id);
-              window.location.href = "/";
+              void deleteRecord(record.id).then(() => {
+                window.location.href = "/";
+              });
             }}
             className="font-mincho text-[11px] tracking-[0.4em] opacity-50 hover:opacity-80 transition-opacity duration-700"
           >
@@ -80,9 +84,9 @@ export function RecordDetail({ id }: Props) {
 
             {record.type === "voice" && (
               <div>
-                {record.audioBlob && (
+                {audioUrl && (
                   <audio
-                    src={record.audioBlob}
+                    src={audioUrl}
                     controls
                     preload="metadata"
                     className="w-full mb-8 opacity-80"
@@ -100,10 +104,10 @@ export function RecordDetail({ id }: Props) {
               </div>
             )}
 
-            {record.type === "photo" && record.imageBlob && (
+            {record.type === "photo" && imageUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={record.imageBlob}
+                src={imageUrl}
                 alt=""
                 className="w-full max-h-[70vh] object-contain"
               />

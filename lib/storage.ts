@@ -1,6 +1,6 @@
 import type { AtoRecord } from "@/types/record";
+import { getDB, INDEX_CREATED_AT, STORE_RECORDS } from "@/lib/db";
 
-const RECORDS_KEY = "ato:records:v1";
 const ANSWERED_KEY = "ato:answered:v1";
 
 const isBrowser = () => typeof window !== "undefined";
@@ -12,72 +12,69 @@ const uuid = (): string => {
 
 const EMPTY: AtoRecord[] = [];
 let snapshot: AtoRecord[] = EMPTY;
-let loaded = false;
+let hydrated = false;
+let hydrating: Promise<void> | null = null;
 const listeners = new Set<() => void>();
-
-const readFromStorage = (): AtoRecord[] => {
-  if (!isBrowser()) return EMPTY;
-  try {
-    const raw = window.localStorage.getItem(RECORDS_KEY);
-    if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as AtoRecord[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : EMPTY;
-  } catch {
-    return EMPTY;
-  }
-};
-
-const writeToStorage = (records: AtoRecord[]) => {
-  if (!isBrowser()) return;
-  window.localStorage.setItem(RECORDS_KEY, JSON.stringify(records));
-};
 
 const setSnapshot = (next: AtoRecord[]) => {
   snapshot = next.length > 0 ? next : EMPTY;
   listeners.forEach((cb) => cb());
 };
 
+export const hydrateRecords = async (): Promise<void> => {
+  if (!isBrowser()) return;
+  if (hydrated) return;
+  if (hydrating) return hydrating;
+  hydrating = (async () => {
+    try {
+      const db = await getDB();
+      const all = await db.getAllFromIndex(STORE_RECORDS, INDEX_CREATED_AT);
+      // index は昇順、UI は降順
+      setSnapshot(all.slice().reverse());
+      hydrated = true;
+    } catch {
+      hydrated = true;
+    } finally {
+      hydrating = null;
+    }
+  })();
+  return hydrating;
+};
+
 export const subscribeRecords = (cb: () => void): (() => void) => {
   listeners.add(cb);
+  // 最初の購読者が来た時に lazy hydrate
+  void hydrateRecords();
   return () => {
     listeners.delete(cb);
   };
 };
 
-export const getRecordsSnapshot = (): AtoRecord[] => {
-  if (!loaded && isBrowser()) {
-    loaded = true;
-    snapshot = readFromStorage();
-  }
-  return snapshot;
-};
+export const getRecordsSnapshot = (): AtoRecord[] => snapshot;
 
 export const getRecordsServerSnapshot = (): AtoRecord[] => EMPTY;
 
-export const loadRecords = (): AtoRecord[] => readFromStorage();
-
-export const addRecord = (
+export const addRecord = async (
   partial: Omit<AtoRecord, "id" | "createdAt"> & { createdAt?: string }
-): AtoRecord => {
+): Promise<AtoRecord> => {
   const record: AtoRecord = {
     ...partial,
     id: uuid(),
     createdAt: partial.createdAt ?? new Date().toISOString(),
   };
-  const next = [record, ...getRecordsSnapshot()];
-  writeToStorage(next);
-  setSnapshot(next);
+  const db = await getDB();
+  await db.put(STORE_RECORDS, record);
+  setSnapshot([record, ...snapshot]);
   return record;
 };
 
-export const getRecord = (id: string): AtoRecord | undefined => {
-  return getRecordsSnapshot().find((r) => r.id === id);
-};
+export const getRecord = (id: string): AtoRecord | undefined =>
+  snapshot.find((r) => r.id === id);
 
-export const deleteRecord = (id: string) => {
-  const next = getRecordsSnapshot().filter((r) => r.id !== id);
-  writeToStorage(next);
-  setSnapshot(next);
+export const deleteRecord = async (id: string): Promise<void> => {
+  const db = await getDB();
+  await db.delete(STORE_RECORDS, id);
+  setSnapshot(snapshot.filter((r) => r.id !== id));
 };
 
 const todayKey = (d: Date = new Date()) =>
@@ -97,7 +94,7 @@ export const compressImage = async (
   file: File,
   maxDim = 1200,
   quality = 0.78
-): Promise<string> => {
+): Promise<Blob> => {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
@@ -123,13 +120,11 @@ export const compressImage = async (
   if (!ctx) throw new Error("Canvas context が取得できません");
   ctx.drawImage(img, 0, 0, w, h);
 
-  return canvas.toDataURL("image/jpeg", quality);
-};
-
-export const blobToBase64 = (blob: Blob): Promise<string> =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(blob);
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("画像を書き出せませんでした"))),
+      "image/jpeg",
+      quality
+    );
   });
+};

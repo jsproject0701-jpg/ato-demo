@@ -6,10 +6,10 @@ export type AtoRecord = {
   createdAt: string;
   timeOfDay: string;
 
-  audioBlob?: string;
+  audioBlob?: Blob;
   transcript?: string;
 
-  imageBlob?: string;
+  imageBlob?: Blob;
 
   question?: string;
   answer?: string;

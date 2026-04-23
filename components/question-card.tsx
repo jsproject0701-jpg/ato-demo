@@ -30,12 +30,12 @@ export function QuestionCard() {
 
   if (!visible || dismissed) return null;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const text = answer.trim();
     if (!text) return;
     setSaving(true);
     const color = getTimeColor();
-    addRecord({
+    await addRecord({
       type: "answer",
       timeOfDay: color.name,
       question,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { addRecord, blobToBase64 } from "@/lib/storage";
+import { addRecord } from "@/lib/storage";
 import { getTimeColor } from "@/lib/time-color";
 
 const DURATION_MS = 15_000;
@@ -76,10 +76,7 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
       const file = new File([blob], `audio.${ext}`, { type: blob.type || mimeType || "audio/webm" });
       form.append("audio", file);
 
-      const [res, audioBase64] = await Promise.all([
-        fetch("/api/transcribe", { method: "POST", body: form }),
-        blobToBase64(blob),
-      ]);
+      const res = await fetch("/api/transcribe", { method: "POST", body: form });
       if (!res.ok) {
         const j = await res.json().catch(() => ({ error: `${res.status}` }));
         throw new Error(j.error || `${res.status}`);
@@ -89,11 +86,11 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
 
       setPhase("saving");
       const color = getTimeColor();
-      addRecord({
+      await addRecord({
         type: "voice",
         timeOfDay: color.name,
         transcript: transcript || undefined,
-        audioBlob: audioBase64,
+        audioBlob: blob,
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "文字起こしに失敗しました");
@@ -204,12 +201,12 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
     else if (phase === "recording") stopEarly();
   };
 
-  const handleTextSubmit = (e: React.FormEvent) => {
+  const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const t = text.trim();
     if (!t) return;
     const color = getTimeColor();
-    addRecord({
+    await addRecord({
       type: "voice",
       timeOfDay: color.name,
       transcript: t,

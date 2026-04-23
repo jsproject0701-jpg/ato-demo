@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { AtoRecord } from "@/types/record";
+import { useObjectUrl } from "@/lib/use-object-url";
 
 type Props = {
   records: AtoRecord[];
@@ -32,6 +33,18 @@ const groupByDate = (records: AtoRecord[]): Array<[string, AtoRecord[]]> => {
   return Array.from(map.entries());
 };
 
+const PhotoThumb = ({ blob }: { blob: Blob | undefined }) => {
+  const url = useObjectUrl(blob);
+  return (
+    <div className="mt-1 w-20 h-20 overflow-hidden border border-current/15">
+      {url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
+      )}
+    </div>
+  );
+};
+
 const Preview = ({ record }: { record: AtoRecord }) => {
   if (record.type === "voice") {
     return (
@@ -41,19 +54,7 @@ const Preview = ({ record }: { record: AtoRecord }) => {
     );
   }
   if (record.type === "photo") {
-    return (
-      <div className="mt-1 w-20 h-20 overflow-hidden border border-current/15">
-        {record.imageBlob && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={record.imageBlob}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        )}
-      </div>
-    );
+    return <PhotoThumb blob={record.imageBlob} />;
   }
   return (
     <div>
