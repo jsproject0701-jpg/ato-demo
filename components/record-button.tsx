@@ -87,11 +87,15 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
         : undefined;
 
     if (Ctor) {
+      const isSafari =
+        typeof navigator !== "undefined" &&
+        /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
       try {
         const rec = new Ctor();
-        rec.lang = "ja-JP";
-        rec.continuous = true;
-        rec.interimResults = true;
+        rec.lang = navigator.language || "ja-JP";
+        rec.continuous = !isSafari;
+        rec.interimResults = !isSafari;
         rec.maxAlternatives = 1;
         rec.onresult = (event) => {
           let finalText = "";
@@ -108,7 +112,14 @@ export function RecordButton({ label = "触れて、15秒" }: Props) {
           finish();
         };
         rec.onend = () => {
-          // ブラウザが自動で止めた場合も保存に進む
+          if (isSafari && !finishedRef.current && recognitionRef.current) {
+            try {
+              rec.start();
+              return;
+            } catch {
+              // restart 失敗時は素直に終了
+            }
+          }
           finish();
         };
         rec.start();
